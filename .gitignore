@@ -1,22 +1,46 @@
-# Security
+# === Security & Secrets ===
+# Never ever push these!
 certificates/
 *.pem
 *.cert
 *.key
 .env
 .env.example
+secrets/
 
-# Large External Libraries (CRITICAL)
-librdkafka-2.13.2/
-foodapp-backend/user-service/mysql-c-api/
+# === Large External Libraries & Dependencies ===
+librdkafka*/
+mysql-c-api*/
+node_modules/
+dist/
+build/
 
-# Compiled Binaries & OS files
+# === Compiled Binaries & Build Artifacts ===
+# This keeps your repo clean from machine-specific code
 *.exe
 *.dll
 *.o
-*.jpg
-*.pdf
+*.so
+*.a
+*.out
+user_service
+order_service
 foodapp-backend/user-service/user_service
 foodapp-backend/order-service/order_service
+
+# === IDE & OS Junk ===
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# === Media & Logs ===
+# Keeping PDFs and large logs out
+*.log
+*.pdf
+*.jpg
+*.jpeg
+*.png
+# Note: Keep images if they are part of your website UI (like logos), 
+# but ignore them if they are just random assets.

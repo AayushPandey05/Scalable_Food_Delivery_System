@@ -1,3 +1,4 @@
+//!.....REDIS MANAGER.......
 #ifndef REDIS_MANAGER_H
 #define REDIS_MANAGER_H
 

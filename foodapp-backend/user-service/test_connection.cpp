@@ -27,7 +27,7 @@ int main() {
     else {
         cout << "❌ Connection Error: " << mysql_error(conn) << endl;
     }
-
+    
     mysql_close(conn);
     return 0;
 }

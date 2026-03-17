@@ -1,89 +1,48 @@
-let auth0 = null;
+const BACKEND_URL = "https://synthia-semidivine-therese.ngrok-free.dev";
 
-// 🛡️ SMART CONFIGURATION: Detects if you're on Localhost or GitHub + SDK Ready Check
-const configureClient = async () => {
-  // 🚦 WAIT UNTIL SDK IS READY: If the script hasn't loaded yet, wait 500ms and try again
-  if (typeof createAuth0Client === "undefined") {
-    console.warn("Auth0 SDK not ready yet, retrying in 500ms...");
-    setTimeout(configureClient, 500);
-    return;
+async function handleAuth(event) {
+  event.preventDefault();
+
+  const isSignUp = !document
+    .getElementById("group-name")
+    .classList.contains("hidden");
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  // If it's Sign Up, we use the name field. If Login, we just use a placeholder or skip.
+  const username = isSignUp
+    ? document.getElementById("fullName").value
+    : email.split("@")[0];
+
+  if (isSignUp) {
+    await registerUser(username, email, password);
+  } else {
+    console.log("Login logic will go here next!");
+    alert(
+      "Login logic is coming in the next step, Aayush! Try Sign Up for now.",
+    );
   }
+}
 
-  // This detects the current URL automatically (No more hardcoded localhost!)
-  const targetRedirect = window.location.origin + window.location.pathname;
-
+async function registerUser(username, email, password) {
   try {
-    auth0 = await createAuth0Client({
-      domain: "dev-tpfjrh1yyggihvc8.us.auth0.com",
-      client_id: "nPhm2PIW29hUiaK2dHPjtDouPY9FOHtv",
-      authorizationParams: {
-        redirect_uri: targetRedirect,
-      },
+    const response = await fetch(`${BACKEND_URL}/api/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password }),
     });
-    console.log("✅ Auth0 Client Configured");
-  } catch (err) {
-    console.error("❌ Auth0 Configuration failed:", err);
-  }
-};
 
-// 🔐 HANDLE THE RETURN TRIP: This runs after you login with Google
-const handleAuth = async () => {
-  // If configureClient is still retrying, auth0 will be null. Wait for it.
-  if (!auth0) {
-    setTimeout(handleAuth, 500);
-    return;
-  }
+    const data = await response.json();
 
-  const query = window.location.search;
-
-  // Check if URL has the 'code' from Auth0
-  if (query.includes("code=") && query.includes("state=")) {
-    try {
-      await auth0.handleRedirectCallback();
-      // Clean the URL (removes the ?code= part)
-      window.history.replaceState({}, document.title, window.location.pathname);
-      console.log("✅ Login Successful!");
-    } catch (err) {
-      console.error("❌ Error handling redirect:", err);
+    if (response.ok && data.status === "success") {
+      localStorage.setItem("authToken", data.token);
+      alert(`Shabaash Aayush! User ${username} registered successfully.`);
+      window.location.href = "index.html";
+    } else {
+      alert("Error: " + (data.message || "User already exists in AWS RDS"));
     }
+  } catch (error) {
+    console.error("Connection Error:", error);
+    alert("checking if ngrok is running!");
   }
-
-  const isAuthenticated = await auth0.isAuthenticated();
-
-  if (isAuthenticated) {
-    const user = await auth0.getUser();
-
-    // 🛠️ UPDATE THE UI: Targets both potential IDs
-    const loginBtn =
-      document.getElementById("login-btn") ||
-      document.getElementById("submit-btn");
-    if (loginBtn) {
-      loginBtn.innerText = `Welcome, ${user.nickname || user.name} ✅`;
-      loginBtn.style.backgroundColor = "#4CAF50";
-      loginBtn.style.color = "white";
-    }
-
-    console.log("👤 User Identity Verified:", user);
-  }
-};
-
-// 🏁 INITIALIZE ON PAGE LOAD
-window.onload = async () => {
-  await configureClient();
-  await handleAuth();
-};
-
-// 🚀 TRIGGER LOGIN: Call this from your button
-const loginSSO = async () => {
-  if (!auth0) {
-    alert("Auth0 is still loading, please try again in a second!");
-    return;
-  }
-
-  try {
-    console.log("Initiating Auth0 Redirect...");
-    await auth0.loginWithRedirect();
-  } catch (err) {
-    console.error("❌ Login failed:", err);
-  }
-};
+}

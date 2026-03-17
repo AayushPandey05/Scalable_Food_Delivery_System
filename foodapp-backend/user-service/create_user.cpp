@@ -1,6 +1,6 @@
-#include "crow.h" // 🔥 The Web Framework
+#include "crow.h"
 #include "RedisManager.h"        
-#include <mysql/mysql.h>        
+#include <mysql/mysql.h>         
 #include <librdkafka/rdkafka.h> 
 #include <jwt-cpp/jwt.h> 
 #include <iostream>
@@ -9,7 +9,7 @@
 
 using namespace std;
 
-// Generate JWT (Same as before)
+// Generate JWT for Aayush's App
 string generate_auth_token(string username, string email) {
     auto token = jwt::create()
         .set_type("JWS")
@@ -19,11 +19,12 @@ string generate_auth_token(string username, string email) {
         .set_payload_claim("username", jwt::claim(username))
         .set_payload_claim("email", jwt::claim(email))
         .set_payload_claim("scope", jwt::claim(string("user:standard"))) 
-        .sign(jwt::algorithm::hs256{"pratyush_secret_key_76072"}); 
+        // 🔥 Updated secret key for Aayush
+        .sign(jwt::algorithm::hs256{"aayush_secret_key_76072"}); 
     return token;
 }
 
-// Kafka Dual-Broadcasting (Same logic)
+// Kafka logic (remains same)
 void send_identity_and_event(const char* username, string jwt_token) {
     char errstr[512];
     rd_kafka_conf_t *conf = rd_kafka_conf_new();
@@ -53,10 +54,25 @@ void send_identity_and_event(const char* username, string jwt_token) {
 int main() {
     crow::SimpleApp app;
 
-    // 🔥 NEW: API Endpoint for Registration
-    CROW_ROUTE(app, "/api/register").methods("POST"_method)([](const crow::request& req){
+    CROW_ROUTE(app, "/api/register").methods("POST"_method, "OPTIONS"_method)([](const crow::request& req){
+        crow::response res;
+        
+        // ✅ CORS Headers
+        res.add_header("Access-Control-Allow-Origin", "*");
+        res.add_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+        if (req.method == "OPTIONS"_method) {
+            res.code = 204;
+            return res;
+        }
+
         auto x = crow::json::load(req.body);
-        if (!x) return crow::response(400, "Invalid JSON");
+        if (!x) {
+            res.code = 400;
+            res.body = "Invalid JSON";
+            return res;
+        }
 
         string username = x["username"].s();
         string email = x["email"].s();
@@ -72,16 +88,24 @@ int main() {
                 send_identity_and_event(username.c_str(), jwt_token);
 
                 mysql_close(conn);
-                crow::json::wvalue res;
-                res["status"] = "success";
-                res["token"] = jwt_token;
-                return crow::response(res);
+                
+                crow::json::wvalue success_res;
+                success_res["status"] = "success";
+                success_res["token"] = jwt_token;
+                
+                res.code = 200;
+                res.body = success_res.dump();
+                return res;
             }
         }
-        mysql_close(conn);
-        return crow::response(500, "Database Error");
+        
+        if (conn) mysql_close(conn);
+        res.code = 500;
+        res.body = "Database Error or Duplicate User";
+        return res;
     });
 
-    cout << "🚀 FoodApp Identity Service listening on Port 8080..." << endl;
+    // 🔥 Log updated for Aayush
+    cout << "🚀 Aayush's FoodApp Identity Service listening on Port 8080..." << endl;
     app.port(8080).multithreaded().run();
 }

@@ -36,7 +36,7 @@
             <button class="toggle-btn" id="btn-signup">Sign Up</button>
           </div>
 
-          <form id="auth-form" class="auth-form">
+          <form id="auth-form" class="auth-form" onsubmit="handleAuth(event)">
             <h2 id="form-title">Welcome Back</h2>
             <p class="subtitle" id="form-subtitle">
               Please enter your details to sign in.
@@ -143,9 +143,7 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
-
     <script src="assets/js/auth.js"></script>
-
     <script src="assets/js/login.js"></script>
   </body>
 </html>

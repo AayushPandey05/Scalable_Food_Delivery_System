@@ -1,89 +1,94 @@
-let auth0 = null;
+const BACKEND_URL = "https://synthia-semidivine-therese.ngrok-free.dev";
 
-// 🛡️ SMART CONFIGURATION: Detects if you're on Localhost or GitHub + SDK Ready Check
-const configureClient = async () => {
-  // 🚦 WAIT UNTIL SDK IS READY: If the script hasn't loaded yet, wait 500ms and try again
-  if (typeof createAuth0Client === "undefined") {
-    console.warn("Auth0 SDK not ready yet, retrying in 500ms...");
-    setTimeout(configureClient, 500);
-    return;
+// --- AUTH LOGIC ---
+
+async function handleAuth(event) {
+  event.preventDefault();
+
+  // Check if we are in Sign Up mode (if the Name field is visible)
+  const isSignUp = !document
+    .getElementById("group-name")
+    ?.classList.contains("hidden");
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  if (isSignUp) {
+    const username = document.getElementById("fullName").value;
+    updateDevMonitor(`Initiating Sign-Up for ${username}...`);
+    await registerUser(username, email, password);
+  } else {
+    updateDevMonitor(`Initiating Login for ${email}...`);
+    await loginUser(email, password);
   }
+}
 
-  // This detects the current URL automatically (No more hardcoded localhost!)
-  const targetRedirect = window.location.origin + window.location.pathname;
-
+async function registerUser(username, email, password) {
   try {
-    auth0 = await createAuth0Client({
-      domain: "dev-tpfjrh1yyggihvc8.us.auth0.com",
-      client_id: "nPhm2PIW29hUiaK2dHPjtDouPY9FOHtv",
-      authorizationParams: {
-        redirect_uri: targetRedirect,
-      },
+    const response = await fetch(`${BACKEND_URL}/api/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password }),
     });
-    console.log("✅ Auth0 Client Configured");
-  } catch (err) {
-    console.error("❌ Auth0 Configuration failed:", err);
-  }
-};
-
-// 🔐 HANDLE THE RETURN TRIP: This runs after you login with Google
-const handleAuth = async () => {
-  // If configureClient is still retrying, auth0 will be null. Wait for it.
-  if (!auth0) {
-    setTimeout(handleAuth, 500);
-    return;
-  }
-
-  const query = window.location.search;
-
-  // Check if URL has the 'code' from Auth0
-  if (query.includes("code=") && query.includes("state=")) {
-    try {
-      await auth0.handleRedirectCallback();
-      // Clean the URL (removes the ?code= part)
-      window.history.replaceState({}, document.title, window.location.pathname);
-      console.log("✅ Login Successful!");
-    } catch (err) {
-      console.error("❌ Error handling redirect:", err);
+    const data = await response.json();
+    if (response.ok && data.status === "success") {
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("foodapp_user", username);
+      updateDevMonitor("✅ RDS: User Saved | Kafka: Event Produced");
+      alert(`Shabaash Aayush! User ${username} registered.`);
+      window.location.href = "index.html";
     }
+  } catch (error) {
+    updateDevMonitor("❌ Connection Failed!");
   }
+}
 
-  const isAuthenticated = await auth0.isAuthenticated();
-
-  if (isAuthenticated) {
-    const user = await auth0.getUser();
-
-    // 🛠️ UPDATE THE UI: Targets both potential IDs
-    const loginBtn =
-      document.getElementById("login-btn") ||
-      document.getElementById("submit-btn");
-    if (loginBtn) {
-      loginBtn.innerText = `Welcome, ${user.nickname || user.name} ✅`;
-      loginBtn.style.backgroundColor = "#4CAF50";
-      loginBtn.style.color = "white";
-    }
-
-    console.log("👤 User Identity Verified:", user);
-  }
-};
-
-// 🏁 INITIALIZE ON PAGE LOAD
-window.onload = async () => {
-  await configureClient();
-  await handleAuth();
-};
-
-// 🚀 TRIGGER LOGIN: Call this from your button
-const loginSSO = async () => {
-  if (!auth0) {
-    alert("Auth0 is still loading, please try again in a second!");
-    return;
-  }
-
+async function loginUser(email, password) {
   try {
-    console.log("Initiating Auth0 Redirect...");
-    await auth0.loginWithRedirect();
-  } catch (err) {
-    console.error("❌ Login failed:", err);
+    const response = await fetch(`${BACKEND_URL}/api/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (response.ok && data.status === "success") {
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("foodapp_user", data.username);
+      updateDevMonitor(`✅ Welcome back ${data.username}! JWT Verified.`);
+      window.location.href = "index.html";
+    } else {
+      alert("Invalid credentials!");
+    }
+  } catch (error) {
+    updateDevMonitor("❌ Backend Offline!");
   }
-};
+}
+
+// --- RECRUITER MONITOR LOGIC ---
+
+function updateDevMonitor(event) {
+  const feed = document.getElementById("event-feed");
+  const status = document.getElementById("ngrok-status");
+  if (!feed || !status) return;
+
+  // Check backend health
+  fetch(BACKEND_URL + "/api/register", { method: "OPTIONS" })
+    .then(() => {
+      status.innerText = "CONNECTED";
+      status.style.color = "#00ff00";
+    })
+    .catch(() => {
+      status.innerText = "OFFLINE";
+      status.style.color = "#ff0000";
+    });
+
+  if (event) {
+    const time = new Date().toLocaleTimeString().split(" ")[0];
+    feed.innerHTML = `> ${time}: ${event}<br>` + feed.innerHTML;
+  }
+}
+
+// Auto-check status every 10 seconds
+setInterval(() => updateDevMonitor(), 10000);
+document.addEventListener("DOMContentLoaded", () =>
+  updateDevMonitor("System Ready."),
+);

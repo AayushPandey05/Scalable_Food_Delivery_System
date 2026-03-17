@@ -1,4 +1,4 @@
-#include "crow.h"
+#include "crow.h" // 🔥 The Web Framework
 #include "RedisManager.h"        
 #include <mysql/mysql.h>         
 #include <librdkafka/rdkafka.h> 
@@ -19,12 +19,11 @@ string generate_auth_token(string username, string email) {
         .set_payload_claim("username", jwt::claim(username))
         .set_payload_claim("email", jwt::claim(email))
         .set_payload_claim("scope", jwt::claim(string("user:standard"))) 
-        // 🔥 Updated secret key for Aayush
         .sign(jwt::algorithm::hs256{"aayush_secret_key_76072"}); 
     return token;
 }
 
-// Kafka logic (remains same)
+// Kafka Dual-Broadcasting
 void send_identity_and_event(const char* username, string jwt_token) {
     char errstr[512];
     rd_kafka_conf_t *conf = rd_kafka_conf_new();
@@ -54,58 +53,90 @@ void send_identity_and_event(const char* username, string jwt_token) {
 int main() {
     crow::SimpleApp app;
 
+    // ---------------------------------------------------------
+    // 1. REGISTER ROUTE
+    // ---------------------------------------------------------
     CROW_ROUTE(app, "/api/register").methods("POST"_method, "OPTIONS"_method)([](const crow::request& req){
         crow::response res;
-        
-        // ✅ CORS Headers
         res.add_header("Access-Control-Allow-Origin", "*");
         res.add_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-        if (req.method == "OPTIONS"_method) {
-            res.code = 204;
-            return res;
-        }
+        if (req.method == "OPTIONS"_method) { res.code = 204; return res; }
 
         auto x = crow::json::load(req.body);
-        if (!x) {
-            res.code = 400;
-            res.body = "Invalid JSON";
-            return res;
-        }
+        if (!x) { res.code = 400; res.body = "Invalid JSON"; return res; }
 
         string username = x["username"].s();
         string email = x["email"].s();
 
         MYSQL* conn = mysql_init(NULL);
         if (mysql_real_connect(conn, "foodapp-db.clyk8ag4gkbt.ap-south-1.rds.amazonaws.com", "admin", "76072pandey", "foodapp", 3306, NULL, 0)) {
-            
             string query = "INSERT INTO users (username, email, password_hash) VALUES ('" + username + "', '" + email + "', 'secure_hash')";
-            
             if (!mysql_query(conn, query.c_str())) {
                 RedisManager::cacheUser(username, email);
                 string jwt_token = generate_auth_token(username, email);
                 send_identity_and_event(username.c_str(), jwt_token);
-
                 mysql_close(conn);
                 
                 crow::json::wvalue success_res;
                 success_res["status"] = "success";
                 success_res["token"] = jwt_token;
-                
                 res.code = 200;
                 res.body = success_res.dump();
                 return res;
             }
         }
-        
         if (conn) mysql_close(conn);
-        res.code = 500;
-        res.body = "Database Error or Duplicate User";
-        return res;
+        res.code = 500; res.body = "Registration Error"; return res;
     });
 
-    // 🔥 Log updated for Aayush
+    // ---------------------------------------------------------
+    // 2. LOGIN ROUTE (The missing piece for Aayush)
+    // ---------------------------------------------------------
+    CROW_ROUTE(app, "/api/login").methods("POST"_method, "OPTIONS"_method)([](const crow::request& req){
+        crow::response res;
+        res.add_header("Access-Control-Allow-Origin", "*");
+        res.add_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        res.add_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+        if (req.method == "OPTIONS"_method) { res.code = 204; return res; }
+
+        auto x = crow::json::load(req.body);
+        if (!x) { res.code = 400; res.body = "Invalid JSON"; return res; }
+
+        string email = x["email"].s();
+        string password = x["password"].s();
+
+        MYSQL* conn = mysql_init(NULL);
+        if (mysql_real_connect(conn, "foodapp-db.clyk8ag4gkbt.ap-south-1.rds.amazonaws.com", "admin", "76072pandey", "foodapp", 3306, NULL, 0)) {
+            // We check for email and our placeholder 'secure_hash'
+            string query = "SELECT username FROM users WHERE email = '" + email + "' AND password_hash = 'secure_hash' LIMIT 1";
+            
+            if (mysql_query(conn, query.c_str()) == 0) {
+                MYSQL_RES* result = mysql_store_result(conn);
+                if (MYSQL_ROW row = mysql_fetch_row(result)) {
+                    string username = row[0];
+                    string jwt_token = generate_auth_token(username, email);
+
+                    crow::json::wvalue success_res;
+                    success_res["status"] = "success";
+                    success_res["token"] = jwt_token;
+                    success_res["username"] = username;
+
+                    mysql_free_result(result);
+                    mysql_close(conn);
+                    res.code = 200;
+                    res.body = success_res.dump();
+                    return res;
+                }
+                mysql_free_result(result);
+            }
+        }
+        if (conn) mysql_close(conn);
+        res.code = 401; res.body = "Invalid Credentials"; return res;
+    });
+
     cout << "🚀 Aayush's FoodApp Identity Service listening on Port 8080..." << endl;
     app.port(8080).multithreaded().run();
 }

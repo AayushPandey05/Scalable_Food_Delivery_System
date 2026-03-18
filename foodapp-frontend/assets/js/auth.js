@@ -1,4 +1,4 @@
-const BACKEND_URL = "https://synthia-semidivine-therese.ngrok-free.dev";
+const BACKEND_URL = "http://3.109.212.103";
 
 // --- AUTH LOGIC ---
 

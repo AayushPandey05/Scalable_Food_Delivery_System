@@ -44,3 +44,6 @@ Thumbs.db
 *.png
 # Note: Keep images if they are part of your website UI (like logos), 
 # but ignore them if they are just random assets.
+
+# .pen
+*.pem

@@ -1,24 +1,47 @@
 version: "3.8"
 
 services:
-  # 1. Your C++ User Service
+  # 1. API Gateway (The "Door" for ngrok)
+  nginx_gateway:
+    image: nginx:latest
+    container_name: nginx_gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - user-service
+    networks:
+      - foodapp-network
+
+  # 2. Your C++ User Service
   user-service:
     build: ./foodapp-backend/user-service
+    container_name: cpp_user_service
     ports:
       - "8080:8080"
     environment:
       - DB_HOST=db
       - DB_USER=root
-      - DB_PASSWORD=password
+      - DB_PASS=password # Matches your C++ getenv("DB_PASS")
       - DB_NAME=foodapp
     depends_on:
       - db
+    networks:
+      - foodapp-network
 
-  # 2. Your Local Database (Simulating RDS)
+  # 3. Your Local Database
   db:
     image: mysql:8.0
+    container_name: mysql_db
     ports:
       - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=password
       - MYSQL_DATABASE=foodapp
+    networks:
+      - foodapp-network
+
+networks:
+  foodapp-network:
+    driver: bridge

@@ -3,12 +3,12 @@ const BACKEND_URL = "https://synthia-semidivine-therese.ngrok-free.dev";
 // --- AUTH LOGIC ---
 
 async function handleAuth(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
 
   // Check if we are in Sign Up mode (if the Name field is visible)
-  const isSignUp = !document
-    .getElementById("group-name")
-    ?.classList.contains("hidden");
+  const nameField = document.getElementById("group-name");
+  const isSignUp = nameField && !nameField.classList.contains("hidden");
+
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
@@ -17,6 +17,7 @@ async function handleAuth(event) {
     updateDevMonitor(`Initiating Sign-Up for ${username}...`);
     await registerUser(username, email, password);
   } else {
+    const username = email.split("@")[0]; // Fallback if name not available
     updateDevMonitor(`Initiating Login for ${email}...`);
     await loginUser(email, password);
   }
@@ -38,7 +39,7 @@ async function registerUser(username, email, password) {
       window.location.href = "index.html";
     }
   } catch (error) {
-    updateDevMonitor("❌ Connection Failed!");
+    updateDevMonitor("❌ Registration Failed! Check Backend Logs.");
   }
 }
 
@@ -57,6 +58,7 @@ async function loginUser(email, password) {
       window.location.href = "index.html";
     } else {
       alert("Invalid credentials!");
+      updateDevMonitor("❌ Login Denied: Unauthorized.");
     }
   } catch (error) {
     updateDevMonitor("❌ Backend Offline!");
@@ -65,30 +67,40 @@ async function loginUser(email, password) {
 
 // --- RECRUITER MONITOR LOGIC ---
 
-function updateDevMonitor(event) {
+async function updateDevMonitor(eventMsg) {
   const feed = document.getElementById("event-feed");
   const status = document.getElementById("ngrok-status");
-  if (!feed || !status) return;
+  if (!status) return;
 
-  // Check backend health
-  fetch(BACKEND_URL + "/api/register", { method: "OPTIONS" })
-    .then(() => {
+  // 🔥 FIXED: Check health using our new dedicated route
+  try {
+    const healthCheck = await fetch(`${BACKEND_URL}/api/health`);
+    if (healthCheck.ok) {
       status.innerText = "CONNECTED";
       status.style.color = "#00ff00";
-    })
-    .catch(() => {
-      status.innerText = "OFFLINE";
-      status.style.color = "#ff0000";
-    });
+    } else {
+      throw new Error();
+    }
+  } catch (err) {
+    status.innerText = "OFFLINE";
+    status.style.color = "#ff0000";
+  }
 
-  if (event) {
+  if (eventMsg && feed) {
     const time = new Date().toLocaleTimeString().split(" ")[0];
-    feed.innerHTML = `> ${time}: ${event}<br>` + feed.innerHTML;
+    feed.innerHTML = `> ${time}: ${eventMsg}<br>` + feed.innerHTML;
   }
 }
 
-// Auto-check status every 10 seconds
-setInterval(() => updateDevMonitor(), 10000);
-document.addEventListener("DOMContentLoaded", () =>
-  updateDevMonitor("System Ready."),
-);
+// Auto-check status every 15 seconds to keep ngrok alive
+setInterval(() => updateDevMonitor(), 15000);
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateDevMonitor("System Ready.");
+
+  // Attach event listener to the form if it exists
+  const authForm = document.getElementById("auth-form");
+  if (authForm) {
+    authForm.addEventListener("submit", handleAuth);
+  }
+});

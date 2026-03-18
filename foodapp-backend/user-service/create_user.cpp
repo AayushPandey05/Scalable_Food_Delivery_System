@@ -1,13 +1,20 @@
-#include "crow.h" // 🔥 The Web Framework
+#include "crow.h" 
 #include "RedisManager.h"        
-#include <mysql/mysql.h>         
+#include <mysql/mysql.h>          
 #include <librdkafka/rdkafka.h> 
 #include <jwt-cpp/jwt.h> 
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <cstdlib> // Required for getenv
 
 using namespace std;
+
+// Helper to get Environment Variables (Matches your docker-compose.yml)
+string get_env_var(const char* key, string default_val) {
+    const char* val = getenv(key);
+    return (val != nullptr) ? string(val) : default_val;
+}
 
 // Generate JWT for Aayush's App
 string generate_auth_token(string username, string email) {
@@ -19,7 +26,7 @@ string generate_auth_token(string username, string email) {
         .set_payload_claim("username", jwt::claim(username))
         .set_payload_claim("email", jwt::claim(email))
         .set_payload_claim("scope", jwt::claim(string("user:standard"))) 
-        .sign(jwt::algorithm::hs256{"aayush_secret_key_76072"}); 
+        .sign(jwt::algorithm::hs256{get_env_var("JWT_SECRET", "aayush_secret_key_76072")}); 
     return token;
 }
 
@@ -54,7 +61,16 @@ int main() {
     crow::SimpleApp app;
 
     // ---------------------------------------------------------
-    // 1. REGISTER ROUTE
+    // 1. HEALTH CHECK ROUTE (The missing piece for the monitor)
+    // ---------------------------------------------------------
+    CROW_ROUTE(app, "/api/health")([](){
+        crow::response res(200, "OK");
+        res.add_header("Access-Control-Allow-Origin", "*");
+        return res;
+    });
+
+    // ---------------------------------------------------------
+    // 2. REGISTER ROUTE
     // ---------------------------------------------------------
     CROW_ROUTE(app, "/api/register").methods("POST"_method, "OPTIONS"_method)([](const crow::request& req){
         crow::response res;
@@ -71,7 +87,7 @@ int main() {
         string email = x["email"].s();
 
         MYSQL* conn = mysql_init(NULL);
-        if (mysql_real_connect(conn, "foodapp-db.clyk8ag4gkbt.ap-south-1.rds.amazonaws.com", "admin", "76072pandey", "foodapp", 3306, NULL, 0)) {
+        if (mysql_real_connect(conn, get_env_var("DB_HOST", "db").c_str(), get_env_var("DB_USER", "root").c_str(), get_env_var("DB_PASS", "password").c_str(), "foodapp", 3306, NULL, 0)) {
             string query = "INSERT INTO users (username, email, password_hash) VALUES ('" + username + "', '" + email + "', 'secure_hash')";
             if (!mysql_query(conn, query.c_str())) {
                 RedisManager::cacheUser(username, email);
@@ -92,7 +108,7 @@ int main() {
     });
 
     // ---------------------------------------------------------
-    // 2. LOGIN ROUTE (The missing piece for Aayush)
+    // 3. LOGIN ROUTE
     // ---------------------------------------------------------
     CROW_ROUTE(app, "/api/login").methods("POST"_method, "OPTIONS"_method)([](const crow::request& req){
         crow::response res;
@@ -106,11 +122,9 @@ int main() {
         if (!x) { res.code = 400; res.body = "Invalid JSON"; return res; }
 
         string email = x["email"].s();
-        string password = x["password"].s();
 
         MYSQL* conn = mysql_init(NULL);
-        if (mysql_real_connect(conn, "foodapp-db.clyk8ag4gkbt.ap-south-1.rds.amazonaws.com", "admin", "76072pandey", "foodapp", 3306, NULL, 0)) {
-            // We check for email and our placeholder 'secure_hash'
+        if (mysql_real_connect(conn, get_env_var("DB_HOST", "db").c_str(), get_env_var("DB_USER", "root").c_str(), get_env_var("DB_PASS", "password").c_str(), "foodapp", 3306, NULL, 0)) {
             string query = "SELECT username FROM users WHERE email = '" + email + "' AND password_hash = 'secure_hash' LIMIT 1";
             
             if (mysql_query(conn, query.c_str()) == 0) {
@@ -137,6 +151,6 @@ int main() {
         res.code = 401; res.body = "Invalid Credentials"; return res;
     });
 
-    cout << "🚀 Aayush's FoodApp Identity Service listening on Port 8080..." << endl;
+    cout << "🚀 Aayush's Backend Identity Service listening on Port 8080..." << endl;
     app.port(8080).multithreaded().run();
 }

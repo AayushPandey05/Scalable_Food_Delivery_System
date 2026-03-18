@@ -1,13 +1,15 @@
+/* --- START OF AAYUSH'S ORIGINAL 900+ LINE CODE --- */
+
 /* Exact Swiggy Clone Styles */
 :root {
-  --swiggy-orange: #FC8019;
+  --swiggy-orange: #fc8019;
   --text-primary: rgba(2, 6, 12, 0.92); /* #02060CEB */
   --text-secondary: rgba(2, 6, 12, 0.6); /* #02060C99 */
   --bg-white: #ffffff;
   --bg-hover: #f0f0f5;
   --border-light: rgba(2, 6, 12, 0.15);
-  --success-green: #11823B;
-  --font-stack: 'Proxima Nova', 'Inter', system-ui, -apple-system, sans-serif;
+  --success-green: #11823b;
+  --font-stack: "Proxima Nova", "Inter", system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -29,7 +31,7 @@ body {
 .global-header {
   height: 80px;
   background-color: var(--bg-white);
-  box-shadow: 0 15px 40px -20px rgba(40,44,63,.15);
+  box-shadow: 0 15px 40px -20px rgba(40, 44, 63, 0.15);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -195,7 +197,7 @@ body {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  color: #02060CEB;
+  color: #02060ceb;
   transition: opacity 0.2s;
 }
 
@@ -279,8 +281,10 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: background-color 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .swiggy-pill:hover {
@@ -343,7 +347,11 @@ body {
   left: 0;
   width: 100%;
   height: 60%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
   z-index: 1;
 }
 
@@ -421,7 +429,9 @@ body {
   background-color: rgba(40, 44, 63, 0.7);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
   z-index: 2000;
 }
 
@@ -527,7 +537,7 @@ body {
 .form-group:first-child input {
   border-top: 1px solid #d4d5d9;
 }
-.form-group:nth-child(n+2) input {
+.form-group:nth-child(n + 2) input {
   border-top: none;
 }
 
@@ -588,8 +598,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .hidden {
@@ -625,7 +639,7 @@ body {
   font-size: 14px;
   pointer-events: auto;
   animation: slideUp 0.3s cubic-bezier(0.2, 0, 0.2, 1) forwards;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .toast.error {
@@ -633,7 +647,7 @@ body {
 }
 
 .toast.success {
-  border-left: 4px solid #11823B; /* Green for success */
+  border-left: 4px solid #11823b; /* Green for success */
 }
 
 .toast.fadeOut {
@@ -641,13 +655,25 @@ body {
 }
 
 @keyframes slideUp {
-  0% { transform: translateY(100%); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOutDown {
-  0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(100%); opacity: 0; }
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
 }
 
 /* --- SPA: RESTAURANT MENU VIEW --- */
@@ -718,11 +744,15 @@ body {
   position: relative;
 }
 
-.veg-icon.veg { border-color: #0f8a65; }
-.veg-icon.non-veg { border-color: #e43b4f; }
+.veg-icon.veg {
+  border-color: #0f8a65;
+}
+.veg-icon.non-veg {
+  border-color: #e43b4f;
+}
 
 .veg-icon::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 3px;
   left: 3px;
@@ -730,8 +760,12 @@ body {
   height: 8px;
   border-radius: 50%;
 }
-.veg-icon.veg::after { background-color: #0f8a65; }
-.veg-icon.non-veg::after { background-color: #e43b4f; }
+.veg-icon.veg::after {
+  background-color: #0f8a65;
+}
+.veg-icon.non-veg::after {
+  background-color: #e43b4f;
+}
 
 .add-btn {
   background-color: var(--bg-white);
@@ -742,12 +776,12 @@ body {
   font-size: 14px;
   border-radius: 4px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.2s;
 }
 
 .add-btn:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 /* --- SPA: CART SIDEBAR --- */
@@ -902,13 +936,12 @@ body {
   }
 }
 
-
 @media (max-width: 768px) {
   .nav-item {
     font-size: 14px;
   }
   .nav-icon {
-    display: none; /* Hide icons on tablet/mobile if needed to save space */
+    display: none;
   }
   .swiggy-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -929,3 +962,5 @@ body {
     display: none;
   }
 }
+
+/* --- END OF AAYUSH'S ORIGINAL CODE --- */

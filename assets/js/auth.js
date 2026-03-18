@@ -35,7 +35,7 @@ async function registerUser(username, email, password) {
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("foodapp_user", username);
       updateDevMonitor("✅ RDS: User Saved | Kafka: Event Produced");
-      alert(`Shabaash Aayush! User ${username} registered.`);
+      alert(`New User ${username} registered.`);
       window.location.href = "index.html";
     }
   } catch (error) {

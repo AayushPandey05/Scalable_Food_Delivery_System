@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  # 1. API Gateway (The "Door" for ngrok)
+  # 1. API Gateway (The "Door" for your AWS Server)
   nginx_gateway:
     image: nginx:latest
     container_name: nginx_gateway
@@ -14,23 +14,30 @@ services:
     networks:
       - foodapp-network
 
-  # 2. Your C++ User Service
+  # 2. Your C++ User Service (The "Brain")
   user-service:
     build: ./foodapp-backend/user-service
     container_name: cpp_user_service
     ports:
       - "8080:8080"
+    volumes:
+      - .:/app
+      - ./certificates:/app/certificates # <--- Connects Mumbai folder to Container
     environment:
       - DB_HOST=db
       - DB_USER=root
-      - DB_PASS=password # Matches your C++ getenv("DB_PASS")
+      - DB_PASS=password
       - DB_NAME=foodapp
+      # Kafka Security Settings (Aiven Keys)
+      - KAFKA_CA_PATH=/app/certificates/ca.pem
+      - KAFKA_CERT_PATH=/app/certificates/service.cert
+      - KAFKA_KEY_PATH=/app/certificates/service.key
     depends_on:
       - db
     networks:
       - foodapp-network
 
-  # 3. Your Local Database
+  # 3. Your Local Database (The "Storage")
   db:
     image: mysql:8.0
     container_name: mysql_db

@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://3.109.212.103";
+const BACKEND_URL = "http://65.2.37.48";
 
 // --- AUTH LOGIC ---
 

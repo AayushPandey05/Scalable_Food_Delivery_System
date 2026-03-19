@@ -152,5 +152,5 @@ int main() {
     });
 
     cout << "🚀 Aayush's Backend Identity Service listening on Port 8080..." << endl;
-    app.port(8080).multithreaded().run();
+    app.port(8080).bindaddr("0.0.0.0").multithreaded().run();
 }

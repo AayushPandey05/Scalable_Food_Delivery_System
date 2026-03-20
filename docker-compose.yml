@@ -5,10 +5,11 @@ services:
   nginx_gateway:
     image: nginx:latest
     container_name: nginx_gateway
-    restart: always # <-- Added: Auto-heal logic
+    restart: always
     ports:
       - "80:80"
     volumes:
+      # Iska path sahi hona chahiye server par
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - user-service
@@ -17,14 +18,14 @@ services:
 
   # 2. Your C++ User Service (The "Brain")
   user-service:
-    build: ./foodapp-backend/user-service
+    build: ./foodapp-backend
     container_name: cpp_user_service
-    restart: always # <-- Added: Auto-heal logic
+    restart: always
     ports:
       - "8080:8080"
     volumes:
       - .:/app
-      - ./certificates:/app/certificates
+      - ./ssl:/app/certificates:ro
     environment:
       - DB_HOST=db
       - DB_USER=root
@@ -42,15 +43,20 @@ services:
   db:
     image: mysql:8.0
     container_name: mysql_db
-    restart: always # <-- Added: Auto-heal logic
+    restart: always
     ports:
       - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=password
       - MYSQL_DATABASE=foodapp
+    volumes:
+      - mysql_data:/var/lib/mysql
     networks:
       - foodapp-network
 
 networks:
   foodapp-network:
     driver: bridge
+
+volumes:
+  mysql_data:

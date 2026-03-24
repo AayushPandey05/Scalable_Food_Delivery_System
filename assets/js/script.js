@@ -59,13 +59,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- HOME VIEW RENDER --- //
   function renderCarousel() {
     if (!dynamicCarousel) return;
+    // We use categories.map to loop through your data.js array
     dynamicCarousel.innerHTML = categories
       .map(
         (cat) => `
-      <div class="mind-item">
-        <img src="${cat.image}" alt="${cat.name}">
-      </div>
-    `,
+      <div class="mind-item">
+        <a href="${cat.link || "#"}" target="_blank" style="text-decoration: none;">
+          <img src="${cat.image}" alt="${cat.name}" style="cursor: pointer;">
+        </a>
+      </div>
+    `,
       )
       .join("");
   }
@@ -434,7 +437,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Initial Render ---
   renderCarousel();
-  renderGrid(currentRestaurants);  
-
-
+  renderGrid(currentRestaurants);
 });

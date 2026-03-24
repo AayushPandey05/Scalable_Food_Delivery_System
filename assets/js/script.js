@@ -434,5 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Initial Render ---
   renderCarousel();
-  renderGrid(currentRestaurants);
+  renderGrid(currentRestaurants);  
+
+
 });

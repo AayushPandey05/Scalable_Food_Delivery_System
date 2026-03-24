@@ -18,9 +18,9 @@ int main() {
     // 1. Connection Settings (Points to Aiven Kafka)
     rd_kafka_conf_set(conf, "bootstrap.servers", "foodapp-kafka-broker-lpu-e79e.k.aivencloud.com:21836", errstr, sizeof(errstr));
     rd_kafka_conf_set(conf, "security.protocol", "ssl", errstr, sizeof(errstr));
-    rd_kafka_conf_set(conf, "ssl.ca.location", "certificates/ca.pem", errstr, sizeof(errstr));
-    rd_kafka_conf_set(conf, "ssl.certificate.location", "certificates/service.cert", errstr, sizeof(errstr));
-    rd_kafka_conf_set(conf, "ssl.key.location", "certificates/service.key", errstr, sizeof(errstr));
+    rd_kafka_conf_set(conf, "ssl.ca.location", "ssl/ca.pem", errstr, sizeof(errstr));
+    rd_kafka_conf_set(conf, "ssl.certificate.location", "ssl/service.cert", errstr, sizeof(errstr));
+    rd_kafka_conf_set(conf, "ssl.key.location", "ssl/service.key", errstr, sizeof(errstr));
 
     // 2. Consumer Group Settings
     // group.id allows Kafka to track which messages this service has already read

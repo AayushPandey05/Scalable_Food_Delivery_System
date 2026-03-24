@@ -9,37 +9,53 @@ services:
     ports:
       - "80:80"
     volumes:
-      # Iska path sahi hona chahiye server par
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - user-service
+      - order-service
     networks:
       - foodapp-network
 
-  # 2. Your C++ User Service (The "Brain")
+  # 2. Your C++ User Service (The "Brain" - Producer)
   user-service:
-    build: ./foodapp-backend
+    build:
+      context: .
+      dockerfile: ./foodapp-backend/user-service/Dockerfile # Path check kar lena
     container_name: cpp_user_service
     restart: always
     ports:
       - "8080:8080"
     volumes:
       - .:/app
-      - ./ssl:/app/certificates:ro
+      - ./foodapp-backend/ssl:/app/ssl:ro
     environment:
       - DB_HOST=db
       - DB_USER=root
       - DB_PASS=password
       - DB_NAME=foodapp
-      - KAFKA_CA_PATH=/app/certificates/ca.pem
-      - KAFKA_CERT_PATH=/app/certificates/service.cert
-      - KAFKA_KEY_PATH=/app/certificates/service.key
+      - KAFKA_CA_PATH=/app/ssl/ca.pem
+      - KAFKA_CERT_PATH=/app/ssl/service.cert
+      - KAFKA_KEY_PATH=/app/ssl/service.key
     depends_on:
       - db
     networks:
       - foodapp-network
 
-  # 3. Your Local Database (The "Storage")
+  # 3. Your C++ Order Service (The "Listener" - Consumer)
+  order-service:
+    build:
+      context: ./foodapp-backend/order-service
+      dockerfile: Dockerfile
+    container_name: cpp_order_service
+    restart: always
+    volumes:
+      - ./foodapp-backend/ssl:/usr/src/app/ssl:ro
+    depends_on:
+      - user-service
+    networks:
+      - foodapp-network
+
+  # 4. Your Local Database (The "Storage")
   db:
     image: mysql:8.0
     container_name: mysql_db
